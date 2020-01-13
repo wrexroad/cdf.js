@@ -243,14 +243,11 @@ function RVDR(cdf) {
   this.addField("NumElems", DATA_TYPES.Int32, -1);
   this.addFIeld("CPRorSPRoffset", DATA_TYPES.BigInt64, null);
   this.addField("NumElems", DATA_TYPES.Int32, -1);
-  this.addField("BlockingFactor", DATA_TYPES.Int16, null);// 4 bytes Offset:80
+  this.addField("BlockingFactor", DATA_TYPES.Int32, null);// 4 bytes Offset:80
   this.addField("Name", DATA_TYPES.ascii, "", 256);// 256 bytes Offset:84. Was 64 bytes in earlier V2.*
-  this.addField("zNumDims", DATA_TYPES.Int16, null);// 4 bytes Offset:340 if a zVDR. Not present if an rVDR.
-  this.addField("zDimSizes", DATA_TYPES.Int16, null);// 4 bytes Offset:344. Size depends on the zNumDims field if a zVDR (but not
-  this.addField("present", DATA_TYPES.Int16, null);// if zero dimensions). Not present if an rVDR.
+  this.addField("zNumDims", DATA_TYPES.Int32, null);// 4 bytes Offset:340 if a zVDR. Not present if an rVDR.
+  this.addField("zDimSizes", DATA_TYPES.Int32, null);
   this.addField("DimVarys", DATA_TYPES.Int16, null);// 4 bytes Size depends on the zNumDims field if a zVDR (but not present if zero
-  this.addField("dimensions", DATA_TYPES.Int16, null);//). Size depends on the rNumDims field of the GDR if an
-  this.addField("rVDR", DATA_TYPES.Int16, null);// (but not present if zero dimensions). Offset:340 if an rVDR.
   this.addField("PadValue", DATA_TYPES.Int16, null);// Variable Size depends on DataType and NumElems fields. Not present if bit 1 of
   this.addField("Flags", DATA_TYPES.Int16, null);// field is not set.
   
