@@ -81,23 +81,108 @@ CDF.prototype.getTotalSize = function() {
 }
 
 CDF.DATA_TYPES = {
-  1: {id: 1, name: "CDF_INT1", size: 1, typedArray: Int8Array},
-  2: {id: 2, name: "CDF_INT2", size: 2, typedArray: Int16Array},
-  4: {id: 4, name: "CDF_INT4", size: 4, typedArray: Int32Array},
-  8: {id: 8, name: "CDF_INT8", size: 8, typedArray: BigInt64Array},
-  11: {id: 11, name: "CDF_UINT1", size: 1, typedArray: Uint8Array},
-  12: {id: 12, name: "CDF_UINT2", size: 2, typedArray: Uint16Array},
-  14: {id: 14, name: "CDF_UINT4", size: 4, typedArray: Uint32Array},
-  41: {id: 41, name: "CDF_BYTE", size: 4, typedArray: Int8Array},
-  21: {id: 21, name: "CDF_REAL4", size: 4, typedArray: Float32Array},
-  22: {id: 22, name: "CDF_REAL8", size: 8, typedArray: Float64Array},
-  44: {id: 44, name: "CDF_FLOAT", size: 4, typedArray: Float32Array},
-  45: {id: 45, name: "CDF_DOUBLE", size: 8, typedArray: Float64Array},
-  31: {id: 31, name: "CDF_EPOCH", size: 8, typedArray: Float64Array},
-  32: {id: 32, name: "CDF_EPOCH16", size: 16, typedArray: Float64Array},//not supported yet
-  33: {id: 33, name: "CDF_TIME_TT2000", size: 8, typedArray: BigInt64Array},
-  51: {id: 51, name: "CDF_CHAR", size: 1, typedArray: Uint8Array},
-  52: {id: 52, name: "CDF_UCHAR", size: 1, typedArray: Uint8Array}
+  1: {
+    id: 1, name: "CDF_INT1", size: 1,
+    typedArray: Int8Array,
+    viewGet: DataView.prototype.getInt8,
+    viewSet: DataView.prototype.setInt8
+  },
+  2: {
+    id: 2, name: "CDF_INT2", size: 2,
+    typedArray: Int16Array,
+    viewGet: DataView.prototype.getInt16,
+    viewSet: DataView.prototype.setInt16
+  },
+  4: {
+    id: 4, name: "CDF_INT4", size: 4,
+    typedArray: Int32Array,
+    viewGet: DataView.prototype.getInt32,
+    viewSet: DataView.prototype.setInt32
+  },
+  8: {
+    id: 8, name: "CDF_INT8", size: 8,
+    typedArray: BigInt64Array,
+    viewGet: DataView.prototype.getBigInt64,
+    viewSet: DataView.prototype.setBigInt64
+  },
+  11: {
+    id: 11, name: "CDF_UINT1", size: 1,
+    typedArray: Uint8Array,
+    viewGet: DataView.prototype.getUint8,
+    viewSet: DataView.prototype.setUint8
+  },
+  12: {
+    id: 12, name: "CDF_UINT2", size: 2,
+    typedArray: Uint16Array,
+    viewGet: DataView.prototype.getUint16,
+    viewSet: DataView.prototype.setUint16
+  },
+  14: {
+    id: 14, name: "CDF_UINT4", size: 4,
+    typedArray: Uint32Array,
+    viewGet: DataView.prototype.getUint32,
+    viewSet: DataView.prototype.setUint32
+  },
+  41: {
+    id: 41, name: "CDF_BYTE", size: 1,
+    typedArray: Int8Array,
+    viewGet: DataView.prototype.getInt8,
+    viewSet: DataView.prototype.setInt8
+  },
+  21: {
+    id: 21, name: "CDF_REAL4", size: 4,
+    typedArray: Float32Array,
+    viewGet: DataView.prototype.getFloat32,
+    viewSet: DataView.prototype.setFloat32
+  },
+  22: {
+    id: 22, name: "CDF_REAL8", size: 8,
+    typedArray: Float64Array,
+    viewGet: DataView.prototype.getFloat64,
+    viewSet: DataView.prototype.setFloat64
+  },
+  44: {
+    id: 44, name: "CDF_FLOAT", size: 4,
+    typedArray: Float32Array,
+    viewGet: DataView.prototype.getFloat32,
+    viewSet: DataView.prototype.setFloat32
+  },
+  45: {
+    id: 45, name: "CDF_DOUBLE", size: 8,
+    typedArray: Float64Array,
+    viewGet: DataView.prototype.getFloat64,
+    viewSet: DataView.prototype.setFloat64
+  },
+  31: {
+    id: 31, name: "CDF_EPOCH", size: 8,
+    typedArray: Float64Array,
+    viewGet: DataView.prototype.getFloat64,
+    viewSet: DataView.prototype.setFloat64
+  },
+  32: {
+    id: 32, name: "CDF_EPOCH16", size: 16,
+    typedArray: Float64Array,
+    viewGet: DataView.prototype.getFloat64,
+    viewSet: DataView.prototype.setFloat64
+  },//not supported yet
+  33: {
+    id: 33, name: "CDF_TIME_TT2000", size: 8,
+    typedArray: BigInt64Array,
+    viewGet: DataView.prototype.getBigInt64,
+    viewSet: DataView.prototype.setBigInt64
+  },
+  51: {
+    id: 51, name: "CDF_CHAR", size: 1,
+    typedArray: Uint8Array,
+    viewGet: DataView.prototype.getUint8,
+    viewSet: DataView.prototype.setUint8
+  },
+  52: {
+    id: 52, name: "CDF_UCHAR", size: 1,
+    typedArray: Uint8Array,
+    viewGet: DataView.prototype.getUint8,
+    viewSet: DataView.prototype.setUint8
+  }
 };
 CDF.DATA_TYPES.CDF_INT1 = CDF.DATA_TYPES[1];
 CDF.DATA_TYPES.CDF_INT2 = CDF.DATA_TYPES[2];
@@ -163,8 +248,8 @@ function Record(args) {
   this.type = args.callee.name;
   this.cdf = args[0];
   this.fields = new Map();
-  this.addField("recordSize", DATA_TYPES.BigInt64, this.getSize);
-  this.addField("recordType", DATA_TYPES.Int32, Record.TYPES[this.type]);
+  this.addField("recordSize", CDF.DATA_TYPES.CDF_INT8, this.getSize);
+  this.addField("recordType", CDF.DATA_TYPES.CDF_INT4, Record.TYPES[this.type]);
   
   return this;
 }
@@ -281,17 +366,17 @@ Record.TYPES = {
 function CDR(cdf) {
   Record.call(this, arguments);
 
-  this.addField("GDRoffset", DATA_TYPES.BigInt64, 312);
-  this.addField("Version", DATA_TYPES.Int32, 3);
-  this.addField("Release", DATA_TYPES.Int32, 7);
-  this.addField("Flags", DATA_TYPES.Int32, 0b01110);
-  this.addField("Encoding", DATA_TYPES.Int32, 6);
-  this.addField("rfuA", DATA_TYPES.Int32, 0);
-  this.addField("rfuB", DATA_TYPES.Int32, 0);
-  this.addField("Increment", DATA_TYPES.Int32, 0);
-  this.addField("Identifier", DATA_TYPES.Int32, 3);
-  this.addField("rfuE", DATA_TYPES.Int32, -1);
-  this.addField("Copyright", DATA_TYPES.ascii, COPYRIGHT_TEXT, 256);
+  this.addField("GDRoffset", CDF.DATA_TYPES.CDF_INT8, 312);
+  this.addField("Version", CDF.DATA_TYPES.CDF_INT4, 3);
+  this.addField("Release", CDF.DATA_TYPES.CDF_INT4, 7);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b01110);
+  this.addField("Encoding", CDF.DATA_TYPES.CDF_INT4, 6);
+  this.addField("rfuA", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("Increment", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("Identifier", CDF.DATA_TYPES.CDF_INT4, 3);
+  this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("Copyright", CDF.DATA_TYPES.CDF_CHAR, COPYRIGHT_TEXT, 256);
   
   return this;
 }
@@ -309,20 +394,20 @@ CDR.FLAGS = {
 function GDR(cdf) {
   Record.call(this, arguments);
 
-  this.addField("rVDRhead", DATA_TYPES.BigInt64, null);
-  this.addField("zVDRhead", DATA_TYPES.BigInt64, null);
-  this.addField("ADRhead", DATA_TYPES.BigInt64, null);
-  this.addField("eof", DATA_TYPES.BigInt64, this.cdf.getTotalSize);
-  this.addField("NrVars", DATA_TYPES.Int32, 0);
-  this.addField("NumAttr", DATA_TYPES.Int32, 0);
-  this.addField("rMaxRec", DATA_TYPES.Int32, 0);
-  this.addField("rNumDims", DATA_TYPES.Int32, 0);
-  this.addField("NzVars", DATA_TYPES.Int32, 0);
-  this.addField("URIhead", DATA_TYPES.BigInt64, 0);
-  this.addField("rfuC", DATA_TYPES.Int32, 0);
-  this.addField("LeapSecondLastUpdated", DATA_TYPES.Int32, 0);
-  this.addField("rfuE", DATA_TYPES.Int32, -1);
-  this.addField("rDimSizes", DATA_TYPES.Int32, []);
+  this.addField("rVDRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("zVDRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("ADRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("eof", CDF.DATA_TYPES.CDF_INT8, this.cdf.getTotalSize);
+  this.addField("NrVars", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("NumAttr", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rMaxRec", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rNumDims", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("NzVars", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("URIhead", CDF.DATA_TYPES.CDF_INT8, 0);
+  this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("LeapSecondLastUpdated", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("rDimSizes", CDF.DATA_TYPES.CDF_INT4, []);
   
   return this;
 }
@@ -333,26 +418,26 @@ GDR.prototype.getSize = function() {
 };
 
 function VDR() {
-  this.addField("VDRnext", DATA_TYPES.BigInt64, null);
-  this.addField("DataType", DATA_TYPES.Int32, null);
-  this.addField("MaxRec", DATA_TYPES.Int32, -1);
-  this.addField("VXRhead", DATA_TYPES.BigInt64, null);
-  this.addField("VXRtail", DATA_TYPES.BigInt64, null);
-  this.addField("Flags", DATA_TYPES.Int32, 0);
-  this.addField("SRecrods", DATA_TYPES.Int32, null);
-  this.addField("rfuB", DATA_TYPES.Int32, 0);
-  this.addField("rfuC", DATA_TYPES.Int32, -1);
-  this.addField("rfuF", DATA_TYPES.Int32, -1);
-  this.addField("NumElems", DATA_TYPES.Int32, 1);
-  this.addField("Num", DATA_TYPES.Int32, 1);
-  this.addField("CPRorSPRoffset", DATA_TYPES.BigInt64, null);
-  this.addField("BlockingFactor", DATA_TYPES.Int32, null);
-  this.addField("Name", DATA_TYPES.ascii, "", 256);
+  this.addField("VDRnext", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("DataType", CDF.DATA_TYPES.CDF_INT4, null);
+  this.addField("MaxRec", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("VXRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("VXRtail", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("SRecrods", CDF.DATA_TYPES.CDF_INT4, null);
+  this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("rfuF", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("NumElems", CDF.DATA_TYPES.CDF_INT4, 1);
+  this.addField("Num", CDF.DATA_TYPES.CDF_INT4, 1);
+  this.addField("CPRorSPRoffset", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("BlockingFactor", CDF.DATA_TYPES.CDF_INT4, null);
+  this.addField("Name", CDF.DATA_TYPES.CDF_CHAR, "", 256);
   if (this.type == "ZVDR") {
-    this.addField("zNumDims", DATA_TYPES.Int32, null);
-    this.addField("zDimSizes", DATA_TYPES.Int32, null);  
+    this.addField("zNumDims", CDF.DATA_TYPES.CDF_INT4, null);
+    this.addField("zDimSizes", CDF.DATA_TYPES.CDF_INT4, null);  
   }
-  this.addField("DimVarys", DATA_TYPES.Int32, 0);
+  this.addField("DimVarys", CDF.DATA_TYPES.CDF_INT4, 0);
   
   return this;
 }
@@ -416,18 +501,18 @@ ZVDR.prototype.constructor = ZVDR;
 function ADR(cdf) {
   Record.call(this, arguments);
 
-  this.addField("ADRnext", DATA_TYPES.BigInt64, null);
-  this.addField("AgrEDRhead", DATA_TYPES.BigInt64, null);
-  this.addField("Scope", DATA_TYPES.Int32, 1);
-  this.addField("Num", DATA_TYPES.Int32, 0);
-  this.addField("NgrEntries", DATA_TYPES.Int32, 0);
-  this.addField("MAXgrEntry", DATA_TYPES.Int32, 0);
-  this.addField("rfuA", DATA_TYPES.Int32, 0);
-  this.addField("AzEDRhead", DATA_TYPES.BigInt64, null);
-  this.addField("NzEntries", DATA_TYPES.Int32, 0);
-  this.addField("MAXzEntry", DATA_TYPES.Int32, 0);
-  this.addField("rfuE", DATA_TYPES.Int32, -1);
-  this.addField("Name", DATA_TYPES.ascii, "", 256);
+  this.addField("ADRnext", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("AgrEDRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("Scope", CDF.DATA_TYPES.CDF_INT4, 1);
+  this.addField("Num", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("NgrEntries", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("MAXgrEntry", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuA", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("AzEDRhead", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("NzEntries", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("MAXzEntry", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("Name", CDF.DATA_TYPES.CDF_CHAR, "", 256);
   
   return this;
 }
@@ -438,19 +523,19 @@ ADR.prototype.getSize = function() {return 324;}
 function AEDR(dt, val) {
   if (!val.length) {val = [val]}
 
-  this.addField("AEDRnext", DATA_TYPES.BigInt64, null);
-  this.addField("AttrNum", DATA_TYPES.Int32, 0);
-  this.addField("DataType", DATA_TYPES.Int32, CDF.DATA_TYPES[dt].id);
-  this.addField("Num", DATA_TYPES.Int32, 0);
-  this.addField("NumElems", DATA_TYPES.Int32, val.length);
-  this.addField("NumStrings", DATA_TYPES.Int32,
+  this.addField("AEDRnext", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("AttrNum", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("DataType", CDF.DATA_TYPES.CDF_INT4, CDF.DATA_TYPES[dt].id);
+  this.addField("Num", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("NumElems", CDF.DATA_TYPES.CDF_INT4, val.length);
+  this.addField("NumStrings", CDF.DATA_TYPES.CDF_INT4,
     typeof val === "string"? split("\\n").length : 1
   );
-  this.addField("rfuB", DATA_TYPES.Int32, 0);
-  this.addField("rfuC", DATA_TYPES.Int32, 0);
-  this.addField("rfuD", DATA_TYPES.Int32, -1);
-  this.addField("rfuE", DATA_TYPES.Int32, -1);
-  this.addField("Value", dt/*FIX THIS*/, val);
+  this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("rfuD", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
+  this.addField("Value", CDF.DATA_TYPES[dt], val);
 }
 AEDR.prototype.getValueBytes = function() {
   let
@@ -495,16 +580,16 @@ AGR_EDR.prototype.constructor = AGR_EDR;
 function VXR(cdf) {
   Record.call(this, arguments);
   
-  this.addField("VXRnext", DATA_TYPES.BigInt64, 0);
-  this.addField("Nentries", DATA_TYPES.Int32, VXR.N_ENTRIES);
-  this.addField("NusedEntries", DATA_TYPES.Int32, 0);
-  this.addField("First", DATA_TYPES.Int32,
+  this.addField("VXRnext", CDF.DATA_TYPES.CDF_INT8, 0);
+  this.addField("Nentries", CDF.DATA_TYPES.CDF_INT4, VXR.N_ENTRIES);
+  this.addField("NusedEntries", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("First", CDF.DATA_TYPES.CDF_INT4,
     (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF), VXR.N_ENTRIES
   );
-  this.addField("Last", DATA_TYPES.Int32,
+  this.addField("Last", CDF.DATA_TYPES.CDF_INT4,
     (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF), VXR.N_ENTRIES
   );
-  this.addField("Offset", DATA_TYPES.BigInt64,
+  this.addField("Offset", CDF.DATA_TYPES.CDF_INT8,
     (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFFFFFFFFFF), VXR.N_ENTRIES
   );
 
@@ -584,53 +669,3 @@ function URI(cdf) {
 }
 URI.prototype = Object.create(Record.prototype);
 URI.prototype.constructor = URI;
-
-
-const DATA_TYPES = {
-  
-  Int8: {
-    size: 1,
-    getter: DataView.prototype.getInt8,
-    setter: DataView.prototype.setInt8
-  },
-  Int16: {
-    size: 2,
-    getter: DataView.prototype.getInt16,
-    setter: DataView.prototype.setInt16
-  },
-  Int32: {
-    size: 4,
-    getter: DataView.prototype.getInt32,
-    setter: DataView.prototype.setInt32
-  },
-  BigInt64: {
-    size: 8,
-    getter: DataView.prototype.getBigInt64,
-    setter: DataView.prototype.setBigInt64
-  },
-  Uint8: {
-    size: 1,
-    getter: DataView.prototype.getUint8,
-    setter: DataView.prototype.setUint8
-  },
-  Uint16: {
-    size: 2,
-    getter: DataView.prototype.getUint16,
-    setter: DataView.prototype.setUint16
-  },
-  Uint32: {
-    size: 4,
-    getter: DataView.prototype.getUint32,
-    setter: DataView.prototype.setUint32
-  },
-  BigUInt64: {
-    size: 8,
-    getter: DataView.prototype.getBigUInt64,
-    setter: DataView.prototype.setBigUInt64
-  },
-  ascii: {
-    size: 1,
-    getter: DataView.prototype.getUint8,
-    setter: DataView.prototype.setUint8
-  }
-}
