@@ -261,16 +261,22 @@ Record.prototype.toBytes = function() {
   return buf;
 }
 
-function LinkedRecord() {
-  this.nextID = 0;
-  return this;
-}
-LinkedRecord.prototype.next = function() {
-  return this.cdf.getOffsetOf(this.next);
-}
-LinkedRecord.prototype.linkNextRecord = function(id) {
-  this.nextID = id;
-}
+Record.TYPES = {
+  CDR: 1,
+  GDR: 2,
+  RVDR: 3,
+  ADR: 4,
+  AGR_EDR: 5,
+  VXR: 6,
+  VVR: 7,
+  ZVDR: 8,
+  AZ_EDR: 9,
+  CCR: 10,
+  CPR: 11,
+  SPR: 12,
+  CVVR: 13,
+  URI: -1
+};
 
 function CDR(cdf) {
   Record.call(this, arguments);
@@ -292,6 +298,13 @@ function CDR(cdf) {
 CDR.prototype = Object.create(Record.prototype);
 CDR.prototype.constructor = CDR;
 CDR.prototype.getSize = function() {return 312;}
+CDR.FLAGS = {
+  ROW_MAJORITY: 0b00001,
+  SINGLE_FILE:  0b00010,
+  HAS_CHECKSUM: 0b00100,
+  USE_MD5_SUM:  0b01000,
+  ANOTHER_SUM:  0b10000
+}
 
 function GDR(cdf) {
   Record.call(this, arguments);
@@ -539,12 +552,6 @@ VVR.prototype.constructor = VVR;
 
 function CCR(cdf) {
   Record.call(this, arguments);
-  
-  Object.defineProperties(this, {
-    size: {
-      get: 
-    }
-  });
   return this;
 }
 CCR.prototype = Object.create(Record.prototype);
@@ -552,12 +559,6 @@ CCR.prototype.constructor = CCR;
 
 function CPR(cdf) {
   Record.call(this, arguments);
-  
-  Object.defineProperties(this, {
-    size: {
-      get: 
-    }
-  });
   return this;
 }
 CPR.prototype = Object.create(Record.prototype);
@@ -565,12 +566,6 @@ CPR.prototype.constructor = CPR;
 
 function SPR(cdf) {
   Record.call(this, arguments);
-  
-  Object.defineProperties(this, {
-    size: {
-      get: 
-    }
-  });
   return this;
 }
 SPR.prototype = Object.create(Record.prototype);
@@ -578,12 +573,6 @@ SPR.prototype.constructor = SPR;
 
 function CVVR(cdf) {
   Record.call(this, arguments);
-  
-  Object.defineProperties(this, {
-    size: {
-      get: 
-    }
-  });
   return this;
 }
 CVVR.prototype = Object.create(Record.prototype);
@@ -591,47 +580,12 @@ CVVR.prototype.constructor = CVVR;
 
 function URI(cdf) {
   Record.call(this, arguments);
-  
-  Object.defineProperties(this, {
-    size: {
-      get: 
-    }
-  });
   return this;
 }
 URI.prototype = Object.create(Record.prototype);
 URI.prototype.constructor = URI;
 
 
-function Field(name, type, value) {
-  this.name = name;
-  this.type = type;
-  this.value = value;0
-
-
-
-  return this;
-}
-Field.prototype.toBytes = function() {
-  return 
-}
-
-Record.TYPES = {
-  CDR: 1,
-  GDR: 2,
-  RVDR: 3,
-  ADR: 4,
-  AGR_EDR: 5,
-  VXR: 6,
-  VVR: 7,
-  ZVDR: 8,
-  AZ_EDR: 9,
-  CCR: 10,
-  CPR: 11,
-  SPR: 12,
-  CVVR: 13,
-  URI: -1
-};
 const DATA_TYPES = {
   
   Int8: {
