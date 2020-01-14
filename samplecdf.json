@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "compression": false
+  },
+  "variables": [
+    {
+      "meta": {
+        "name": "test"
+      },
+      "records": [1,2,3]
+    }
+  ]
+}
