@@ -1,13 +1,59 @@
 {
   "meta": {
-    "compression": false
+    "global": {
+      "File_nameing_convention": "source_datatype_descriptor",
+      "Data_type": "l2>Level-2",
+      "PI_name": "Robyn Millan",
+      "PI_affiliation": "Dartmouth College",
+      "Mission_group": "BARREL",
+      "Project": "LWS>Living With a Star>BARREL",
+      "Source_name": "bar_4G",
+      "Data_version": "10",
+      "Discipline": "Space Physics>Magnetospheric Science",
+      "HTTP_LINK": "http://barreldata.ucsc.edu",
+      "LINK_TITLE": "BARREL Data Repository and Tools",
+      "LINK_TEXT": "Access to all releases of BARREL data and links to the Science Operation Center tools.",
+      "Generation_date": "yyy/mm/dd",
+      "Generated_by": "BARREL CDF Generator",
+      "Rules_of_use": "BARREL will make all its scientific data products quickly and publicly available but all users are expected to read and follow the \"BARREL Mission Data Usage Policy\" which can be found in the BARREL data repository or obtained by contacting barrelballoons@gmail.com"
+    },
+    "zVars": {
+      "FIELDNAM": ["EPOCH", "Frame Number", "Data Quality Flag", "GPS Lat", "GPS Lon", "GPS Alt", "MLT for Kp=2 (T89c)", "MLT for Kp=6 (T89c)", "L for Kp=2 (T89c)", "L for Kp=6 (T89c)"],
+      "CATDESC": ["Default time", "DPU Frame Counter", "Data Quality Flag", "GPS Latitude", "GPS Longitude", "GPS Altitude", "Magnetic local time for Kp=2 (using T89c)", "Magnetic local time for Kp=6 (using T89c)", "L shell for Kp=2 (using T89c)", "L shell for Kp=6 (using T89c)"],
+      "VAR_TYPE": ["support_data", "support_data", "data", "data", "data", "data", "data", "data", "data", "data"],
+      "UNITS": ["ns", "", "0 means no issue", "degrees North", "degrees East", "km", "hr", "hr"],
+      "SCALETYPE": ["linear", "linear"],
+      "VALIDMIN": [14295817573253380, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "VALIDMAX": [55811340369721350, 4294967295, 4294967167, 90, 180, 50, 24, 24, 1000, 1000],
+      "FILLVAL": [128, 4294967295, 4294967295, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30],
+      "LABLAXIS": ["Epoch", "Frame", "", "Lat", "Lon", "Alt", "MLT (Kp=2)", "MLT (Kp=6)", "L (Kp=2)", "L (Kp=6)"],
+      "MONOTON": ["INCREASE"],
+      "TIME_BASE": ["J2000"],
+      "TIME_SCALE": ["Terrestrial Time"],
+      "REFERENCE_POSITION": ["Rotation Earth Geoid"],
+      "DEPEND_0": ["", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch"],
+      "FORMAT": ["", "I10"]
+    }
   },
   "variables": [
     {
-      "meta": {
-        "name": "test"
+      "attributes": {
+        "FIELDNAM": "EPOCH",
+        "CATDESC": "Default time",
+        "VAR_TYPE": "support_data",
+        "UNITS": "ns",
+        "SCALETYPE": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 55811340369721350,
+        "FILLVAL": 128,
+        "LABLAXIS": "Epoch",
+        "MONOTON": "INCREASE",
+        "TIME_BASE": "J2000",
+        "TIME_SCALE": "Terrestrial Time",
+        "DataType": "CDF_TIME_TT2000"
+
       },
-      "records": [1,2,3]
+      "records": []
     }
   ]
 }
