@@ -7,7 +7,17 @@ Greenbelt, Maryland 20771 USA
 (Internet -- GSFC-CDF-SUPPORT@LISTS.NASA.GOV)
 `;
 
-function CDF() {
+function CDF(skel) {
+  this.skel = Object.create(skel);
+  if (!this.skel.zVars) {this.skel.zVars = []}
+  if (!this.skel.rVars) {this.skel.rVars = []}
+
+  this.attributes = {
+    g: CDF.getAttributeSet(this.skel.meta),
+    z: CDF.getAttributeSet(this.skel.zVars),
+    r: CDF.getAttributeSet(this.skel.rVars)
+  }
+  
   this.magic = [0xCDF30001, 0x0000FFFF];
   
   this.cdr = new CDR(this);
@@ -18,6 +28,33 @@ function CDF() {
   this.records.set(this.gdr.id, this.gdr);
 
   return this;
+}
+
+CDF.getAttributeSet = function(entries) {
+  let set = new Set();
+
+  if (entries.length === undefined) {
+    entries = [entries];
+  }
+
+  entries.forEach(entry => {
+    let
+      attr = entry.attributes,
+      type = entry.type;
+
+    Object.keys(attr).forEach(name => {
+      let val = attr[name];
+      if (typeof val === "string") {
+        set.add({name, val, type: "CDF_CHAR"})
+      } else if (val.type) {
+        set.add(val);
+      } else {
+        set.add({name, val, type})
+      }
+    });
+  });
+
+  return set;
 }
 
 CDF.prototype.setVersion = function(ver, rev, sub) {
@@ -65,19 +102,24 @@ CDF.prototype.addAttribute = function(attr) {
 CDF.prototype.getOffsetOf = function(id) {
   let offset = 0;
 
-  this.records.some(rec => {
-    if (id === rec.id) {
-      return true;
+  for(let rec of this.records) {
+    if (id === rec[0]) {
+      break;
     } else {
-      offset += rec.getSize();
-      return false;
+      offset += rec[1].getSize();
     }
-  });
+  }
 
   return offset;
 }
 CDF.prototype.getTotalSize = function() {
-  return this.records.recude((size, rec) => (size += rec.getSize()), 0);
+  let size = 0;
+
+  for(let rec of this.records) {
+    size += rec[1].getSize();
+  }
+
+  return size;  
 }
 
 CDF.DATA_TYPES = {
@@ -301,6 +343,14 @@ Record.prototype.setFlag = function(flg) {
 
   return true;
 }
+Record.prototype.unsetFlag = function(flg) {
+  let flags = this.fields.get("Flags");
+  if (!flags) {return false;}
+  flags.value &= ~flg;
+  this.fields.set("Flags", flags);
+
+  return true;
+}
 Record.prototype.toBytes = function() {
   let
     buf = Buffer.alloc(this.getSize()),
@@ -369,7 +419,7 @@ function CDR(cdf) {
   this.addField("GDRoffset", CDF.DATA_TYPES.CDF_INT8, 312);
   this.addField("Version", CDF.DATA_TYPES.CDF_INT4, 3);
   this.addField("Release", CDF.DATA_TYPES.CDF_INT4, 7);
-  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b01110);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b00011);
   this.addField("Encoding", CDF.DATA_TYPES.CDF_INT4, 6);
   this.addField("rfuA", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
@@ -378,6 +428,10 @@ function CDR(cdf) {
   this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
   this.addField("Copyright", CDF.DATA_TYPES.CDF_CHAR, COPYRIGHT_TEXT, 256);
   
+  if (cdf.skel.colMajority) {
+    this.unsetFlag(CDF.FLAGS.ROW_MAJORITY);
+  }
+
   return this;
 }
 CDR.prototype = Object.create(Record.prototype);
@@ -397,17 +451,21 @@ function GDR(cdf) {
   this.addField("rVDRhead", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("zVDRhead", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("ADRhead", CDF.DATA_TYPES.CDF_INT8, null);
-  this.addField("eof", CDF.DATA_TYPES.CDF_INT8, this.cdf.getTotalSize);
-  this.addField("NrVars", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("NumAttr", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("rMaxRec", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("rNumDims", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("NzVars", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("URIhead", CDF.DATA_TYPES.CDF_INT8, 0);
+  this.addField("eof", CDF.DATA_TYPES.CDF_INT8, cdf.getTotalSize);
+  this.addField("NrVars", CDF.DATA_TYPES.CDF_INT4,
+    cdf.skel.zVars.length + cdf.skel.rVars.length
+  );
+  this.addField("NumAttr", CDF.DATA_TYPES.CDF_INT4, 
+    cdf.attributes.g.size + cdf.attributes.r.size + cdf.attributes.z.size
+  );
+  this.addField("rMaxRec", CDF.DATA_TYPES.CDF_INT4, cdf.skel.rVars.length);
+  this.addField("rNumDims", CDF.DATA_TYPES.CDF_INT4, cdf.skel.rDimSizes.length);
+  this.addField("NzVars", CDF.DATA_TYPES.CDF_INT4, cdf.skel.zVars.length);
+  this.addField("URIhead", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("LeapSecondLastUpdated", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuE", CDF.DATA_TYPES.CDF_INT4, -1);
-  this.addField("rDimSizes", CDF.DATA_TYPES.CDF_INT4, []);
+  this.addField("rDimSizes", CDF.DATA_TYPES.CDF_INT4, cdf.skel.rDimSizes);
   
   return this;
 }

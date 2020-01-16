@@ -1,6 +1,6 @@
 {
   "meta": {
-    "global": {
+    "attributes": {
       "File_nameing_convention": "source_datatype_descriptor",
       "Data_type": "l2>Level-2",
       "PI_name": "Robyn Millan",
@@ -15,45 +15,241 @@
       "LINK_TEXT": "Access to all releases of BARREL data and links to the Science Operation Center tools.",
       "Generation_date": "yyy/mm/dd",
       "Generated_by": "BARREL CDF Generator",
-      "Rules_of_use": "BARREL will make all its scientific data products quickly and publicly available but all users are expected to read and follow the \"BARREL Mission Data Usage Policy\" which can be found in the BARREL data repository or obtained by contacting barrelballoons@gmail.com"
+      "Rules_of_use": "BARREL will make all its scientific data products quickly and publicly available but all users are expected to read and follow the \"BARREL Mission Data Usage Policy\" which can be found in the BARREL data repository or obtained by contacting barrelballoons@gmail.com",
+      "Logical_source_description": "Coordinates",
+      "TEXT": "Geographic and magnetic corrdinates. Geographic coordinates are obtained from onboard GPS unit, magnegic coordinates are derived using the IRBEM FORTRAN library. Ephemeris data products (Lat, Long, Alt, and Time) are each returned from the payload once every 4s.",
+      "Instrument_type": "Ephemeris",
+      "Descriptor": "ephm>EPHeMeris",
+      "Time_resolution": "4s",
+      "Logical_source": "bar_4G_l2_ephm",
+      "Logical_file_id": "bar_4G_l2_20160830_V05"
     },
-    "zVars": {
-      "FIELDNAM": ["EPOCH", "Frame Number", "Data Quality Flag", "GPS Lat", "GPS Lon", "GPS Alt", "MLT for Kp=2 (T89c)", "MLT for Kp=6 (T89c)", "L for Kp=2 (T89c)", "L for Kp=6 (T89c)"],
-      "CATDESC": ["Default time", "DPU Frame Counter", "Data Quality Flag", "GPS Latitude", "GPS Longitude", "GPS Altitude", "Magnetic local time for Kp=2 (using T89c)", "Magnetic local time for Kp=6 (using T89c)", "L shell for Kp=2 (using T89c)", "L shell for Kp=6 (using T89c)"],
-      "VAR_TYPE": ["support_data", "support_data", "data", "data", "data", "data", "data", "data", "data", "data"],
-      "UNITS": ["ns", "", "0 means no issue", "degrees North", "degrees East", "km", "hr", "hr"],
-      "SCALETYPE": ["linear", "linear"],
-      "VALIDMIN": [14295817573253380, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      "VALIDMAX": [55811340369721350, 4294967295, 4294967167, 90, 180, 50, 24, 24, 1000, 1000],
-      "FILLVAL": [128, 4294967295, 4294967295, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30, -9.999999848243207e+30],
-      "LABLAXIS": ["Epoch", "Frame", "", "Lat", "Lon", "Alt", "MLT (Kp=2)", "MLT (Kp=6)", "L (Kp=2)", "L (Kp=6)"],
-      "MONOTON": ["INCREASE"],
-      "TIME_BASE": ["J2000"],
-      "TIME_SCALE": ["Terrestrial Time"],
-      "REFERENCE_POSITION": ["Rotation Earth Geoid"],
-      "DEPEND_0": ["", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch", "Epoch"],
-      "FORMAT": ["", "I10"]
-    }
+    "rDimSizes": null,
+    "colMajority": false
   },
-  "variables": [
+  "zVars": [
     {
       "attributes": {
         "FIELDNAM": "EPOCH",
         "CATDESC": "Default time",
         "VAR_TYPE": "support_data",
         "UNITS": "ns",
-        "SCALETYPE": "linear",
-        "VALIDMIN": 0,
-        "VALIDMAX": 55811340369721350,
-        "FILLVAL": 128,
+        "SCALETYP": "linear",
+        "VALIDMIN": 306590472162849280,
+        "VALIDMAX": 502200068184000000,
+        "FILLVAL": -9223372036854775808,
         "LABLAXIS": "Epoch",
         "MONOTON": "INCREASE",
         "TIME_BASE": "J2000",
         "TIME_SCALE": "Terrestrial Time",
-        "DataType": "CDF_TIME_TT2000"
-
+        "REFERENCE_POSITION": "Rotation Earth Geoid",
+        "DEPEND_0": null,
+        "FORMAT": null,
+        "DISPLAY_TYPE": null,
+        "VAR_NOTES": null
       },
-      "records": []
+      "dataType": "CDF_TIME_TT2000"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "Frame Number",
+        "CATDESC": "DPU Frame Counter",
+        "VAR_TYPE": "support_data",
+        "UNITS": null,
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 4294967295,
+        "FILLVAL": 4294967295,
+        "LABLAXIS": "Frame",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "I10",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": null
+      },
+      "dataType": "CDF_UINT4"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "Data Quality Flag",
+        "CATDESC": "Data Quality Flag",
+        "VAR_TYPE": "data",
+        "UNITS": "0 means no issue",
+        "SCALETYP": null,
+        "VALIDMIN": 0,
+        "VALIDMAX": 4294967167,
+        "FILLVAL": 4294967295,
+        "LABLAXIS": null,
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "I10",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "32bit flag used to idicate date quality."
+      },
+      "dataType": "CDF_UINT4"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "GPS Lat",
+        "CATDESC": "GPS Latitude",
+        "VAR_TYPE": "data",
+        "UNITS": "degrees North",
+        "SCALETYP": "linear",
+        "VALIDMIN": -90,
+        "VALIDMAX": 90,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "Lat",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F6.3",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "GPS Lon",
+        "CATDESC": "GPS Longitude",
+        "VAR_TYPE": "data",
+        "UNITS": "degrees East",
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 180,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "Lon",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F6.3",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "GPS Alt",
+        "CATDESC": "GPS Altitude",
+        "VAR_TYPE": "data",
+        "UNITS": "km",
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 50,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "Alt",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F8.3",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": null
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "MLT for Kp=2 (T89c)",
+        "CATDESC": "Magnetic local time for Kp=2 (using T89c)",
+        "VAR_TYPE": "data",
+        "UNITS": "hr",
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 24,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "MLT (Kp=2)",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F4.2",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "MLT for Kp=6 (T89c)",
+        "CATDESC": "Magnetic local time for Kp=6 (using T89c)",
+        "VAR_TYPE": "data",
+        "UNITS": "hr",
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 24,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "MLT (Kp=6)",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F4.2",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "L for Kp=2 (T89c)",
+        "CATDESC": "L shell for Kp=2 (using T89c)",
+        "VAR_TYPE": "data",
+        "UNITS": null,
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 1000,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "L (Kp=2)",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F8.3",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
+      },
+      "dataType": "CDF_FLOAT"
+    },
+    {
+      "attributes": {
+        "FIELDNAM": "L for Kp=6 (T89c)",
+        "CATDESC": "L shell for Kp=6 (using T89c)",
+        "VAR_TYPE": "data",
+        "UNITS": null,
+        "SCALETYP": "linear",
+        "VALIDMIN": 0,
+        "VALIDMAX": 1000,
+        "FILLVAL": -9.999999848243207e+30,
+        "LABLAXIS": "L (Kp=6)",
+        "MONOTON": null,
+        "TIME_BASE": null,
+        "TIME_SCALE": null,
+        "REFERENCE_POSITION": null,
+        "DEPEND_0": "Epoch",
+        "FORMAT": "F8.3",
+        "DISPLAY_TYPE": "time_series",
+        "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
+      },
+      "dataType": "CDF_FLOAT"
     }
+  ],
+  "rVars": [
+
   ]
 }
