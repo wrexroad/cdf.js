@@ -48,7 +48,8 @@
         "DISPLAY_TYPE": null,
         "VAR_NOTES": null
       },
-      "dataType": "CDF_TIME_TT2000"
+      "dataType": "CDF_TIME_TT2000",
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -70,7 +71,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": null
       },
-      "dataType": "CDF_UINT4"
+      "dataType": "CDF_UINT4",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -92,7 +95,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "32bit flag used to idicate date quality."
       },
-      "dataType": "CDF_UINT4"
+      "dataType": "CDF_UINT4",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -114,7 +119,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -136,7 +143,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -158,7 +167,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": null
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -180,7 +191,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -202,7 +215,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -224,7 +239,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     },
     {
       "attributes": {
@@ -246,7 +263,9 @@
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
-      "dataType": "CDF_FLOAT"
+      "dataType": "CDF_FLOAT",
+      "dimSizes": [1],
+      "dimVarys": [0]
     }
   ],
   "rVars": [
