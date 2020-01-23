@@ -13,10 +13,14 @@ Greenbelt, Maryland 20771 USA
 
 const fs = require('fs');
 
-function CDF(skel) {
+function CDF(skel, name) {
+  this.skel = Object.create(skel);
+
+  this.filename = name ||
+    (skel.meta.attributes.Logical_file_id) || "output";
+
   this.magic = [0xCDF30001, 0x0000FFFF];
 
-  this.skel = Object.create(skel);
   if (!this.skel.zVars) {this.skel.zVars = []};
   if (!this.skel.rVars) {this.skel.rVars = []};
 
@@ -63,12 +67,35 @@ function CDF(skel) {
   //create z and r vdr records and aedr records
   this.zVariableCount = 0;
   this.rVariableCount = 0;
+  this.variables = {r: {}, z:{}};
   this.createVariableRecords(this.skel.zVars, "z").forEach(rec => {
-    this.records.set(rec.id, rec);
+    if (rec instanceof ZVDR) {
+      let
+        name = rec.fields.get("Name").value,
+        num = rec.fields.get("Num").value;
+
+      this.variables.z[name] = {
+        rec, maxEntry: -1, tmp: fs.openSync("./"+this.filename+".z"+num, "w+")
+      };
+      this.records.set(rec.id, rec);
+      this.zVariableCount++;
+    }
   });
+  //this.gdr.updateField("zMaxRec", this.zVariableCount-1);
   this.createVariableRecords(this.skel.rVars, "r").forEach(rec => {
-    this.records.set(rec.id, rec);
+    if (rec instanceof RVDR) {
+      let
+        name = rec.fields.get("Name").value,
+        num = rec.fields.get("Num").value;
+      
+      this.variables.r[name] = {
+        rec, maxEntry: -1, tmp: fs.openSync("./"+this.filename+".v"+num, "w+")
+      };
+      this.records.set(rec.id, rec);
+      this.rVariableCount++;
+    }
   });
+  this.gdr.updateField("rMaxRec", this.rVariableCount-1);
 
   return this;
 }
@@ -223,9 +250,24 @@ CDF.prototype.getTotalSize = function() {
   return size;  
 }
 
-CDF.prototype.write = function(name) {
-  name = name || (this.skel.meta.attributes.Logical_file_id + ".cdf") || "output.cdf";
+CDF.prototype.addData = function(variable, entries) {
+  //create a buffer for the output bytes
+  let
+    type = CDF.DATA_TYPES[variable.rec.fields.get("DataType").value],
+    size = type.size,
+    buff = Buffer.alloc(size * entries.length),
+    view = new DataView(buff.buffer, buff.offset, buff.length);
 
+  entries.forEach((val, val_i) => {
+    type.viewSet.call(view, val_i * size, val);
+    variable.maxEntry++;
+  });
+
+  variable.rec.updateField("MaxRec", variable.maxEntry);
+  fs.appendFileSync(variable.tmp, buff);
+}
+
+CDF.prototype.write = function() {
   let
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
@@ -238,7 +280,14 @@ CDF.prototype.write = function(name) {
     output.push(rec.toBytes());
   })
   //console.log(output)
-  fs.writeFileSync(name, Buffer.concat(output));
+  fs.writeFileSync(this.filename + ".cdf", Buffer.concat(output));
+
+  Object.keys(this.variables.r).forEach(varName => {
+    fs.closeSync(this.variables.r[varName].tmp)
+  });
+  Object.keys(this.variables.z).forEach(varName => {
+    fs.closeSync(this.variables.z[varName].tmp)
+  });
 }
 
 CDF.SCOPE = {
@@ -557,8 +606,8 @@ function CDR(cdf) {
   this.addField("GDRoffset", CDF.DATA_TYPES.CDF_INT8, 320);
   this.addField("Version", CDF.DATA_TYPES.CDF_INT4, 3);
   this.addField("Release", CDF.DATA_TYPES.CDF_INT4, 7);
-  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b11000000000000000000000000000000);
   this.addField("Encoding", CDF.DATA_TYPES.CDF_INT4, 6);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b10000000000000000000000000000000);
   this.addField("rfuA", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("Increment", CDF.DATA_TYPES.CDF_INT4, 0);
