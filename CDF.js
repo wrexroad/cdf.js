@@ -281,7 +281,8 @@ CDF.prototype.write = function() {
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
     offset = 0,
-    file = this.filename + ".cdf";
+    file = this.filename + ".cdf",
+    fd = fs.openSync(file, "r+");
   
   view.setInt32(0, this.magic[0]);
   view.setInt32(4, this.magic[1]);
@@ -313,21 +314,26 @@ CDF.prototype.write = function() {
   });
 
   this.records.forEach(rec => {
-    let bytes = rec.toBytes();
-    fs.appendFileSync(file, bytes);
-    offset += bytes.byteLength;
+    let
+      bytes = rec.toBytes(),
+      size = bytes.byteLength;
+
+    fs.writeSync(fd, bytes, 0, size, offset);
+    offset += size;
 
     if (rec instanceof VVR) {
-      fs.createReadStream(rec.data.tmp,).pipe(
+      fs.createReadStream(rec.data.tmp).pipe(
         fs.createWriteStream(file, {start: offset, flags: "r+"})
       );
+      console.log(size, rec.getSize() - size)
+      offset += (rec.getSize() - size);
     }
   });
   /* Object.keys(this.variables.z).forEach(varName => {  
     fs.closeSync(this.variables.z[varName].tmp);
   });
    *///console.log(output)
-  
+  fs.closeSync(fd);
 }
 
 CDF.SCOPE = {
@@ -579,7 +585,6 @@ Record.prototype.unsetFlag = function(flg) {
   return true;
 }
 Record.prototype.toBytes = function() {
-  //console.log(Object.getPrototypeOf(this))
   let
     buf = Buffer.alloc(this.getSize()),
     view = new DataView(buf.buffer),
@@ -871,8 +876,8 @@ function VXR(cdf) {
   this.numEntries = 0
   
   let
-    first = (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF),
-    last = (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF);
+    first = (new Array(VXR.N_ENTRIES)).fill(-1),
+    last = (new Array(VXR.N_ENTRIES)).fill(-1);
 
   this.addField("VXRnext", CDF.DATA_TYPES.CDF_INT8, 0);
   this.addField("Nentries", CDF.DATA_TYPES.CDF_INT4, VXR.N_ENTRIES);
@@ -880,7 +885,7 @@ function VXR(cdf) {
   this.addField("First", CDF.DATA_TYPES.CDF_INT4, first, VXR.N_ENTRIES);
   this.addField("Last", CDF.DATA_TYPES.CDF_INT4, last, VXR.N_ENTRIES);
   this.addField("Offset", CDF.DATA_TYPES.CDF_INT8,
-    (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFFFFFFFFFF), VXR.N_ENTRIES
+    (new Array(VXR.N_ENTRIES)).fill(-1), VXR.N_ENTRIES
   );
 
   return this;
@@ -889,10 +894,13 @@ VXR.prototype = Object.create(Record.prototype);
 VXR.prototype.constructor = VXR;
 VXR.prototype.getSize = function() {
   return 28 + (VXR.N_ENTRIES*16)
-};
+};/* 
+VXR.prototype.toBytes = function() {
+  return Record.prototype.toBytes.call(this);
+}; */
 VXR.prototype.addEntry = function(rec, minRec, maxRec) {
   let entry_i = this.numEntries;
-  this.numEntries = ++entry_i;
+  this.numEntries++;
 
   if (entry_i === VXR.N_ENTRIES) {
     return false;
@@ -928,12 +936,25 @@ function VVR(cdf, data) {
 VVR.prototype = Object.create(Record.prototype);
 VVR.prototype.constructor = VVR;
 VVR.prototype.getSize = function() {
-  return 8 + (CDF.DATA_TYPES[this.data.type].size * this.data.maxEntry);
+  return 12 + (CDF.DATA_TYPES[this.data.type].size * (this.data.maxEntry + 1));
 }
+VVR.prototype.toBytes = function() {
+  let
+    buf = Buffer.alloc(12),
+    view = new DataView(buf.buffer),
+    field;
+  
+  field = this.fields.get("recordSize");
+  field.viewSet.call(view, 0, field.value());
 
+  field = this.fields.get("recordType");
+  field.viewSet.call(view, 8, field.value);
+
+  return buf;
+}
 function CCR(cdf) {
   Record.call(this, arguments);
-  return this;
+  return this
 }
 CCR.prototype = Object.create(Record.prototype);
 CCR.prototype.constructor = CCR;
