@@ -20,6 +20,7 @@ function CDF(skel, name) {
     (skel.meta.attributes.Logical_file_id) || "output";
 
   this.magic = [0xCDF30001, 0x0000FFFF];
+  this.encoding = CDF.ENCODINGS.IBMPC_ENCODING;
 
   if (!this.skel.zVars) {this.skel.zVars = []};
   if (!this.skel.rVars) {this.skel.rVars = []};
@@ -60,6 +61,8 @@ function CDF(skel, name) {
       aedr = new AGR_EDR(this, 0, attr_num, CDF.DATA_TYPES.CDF_CHAR, value);
     
     adr.updateField("AgrEDRhead", aedr);
+    adr.updateField("NgrEntries", 1);
+    adr.updateField("MAXgrEntry", 0);
 
     this.records.set(aedr.id, aedr);
   });
@@ -72,28 +75,34 @@ function CDF(skel, name) {
     if (rec instanceof ZVDR) {
       let
         name = rec.fields.get("Name").value,
-        num = rec.fields.get("Num").value;
+        num = rec.fields.get("Num").value,
+        type = rec.fields.get("DataType").value;
 
       this.variables.z[name] = {
-        rec, maxEntry: -1, tmp: fs.openSync("./"+this.filename+".z"+num, "w+")
+        vdr: rec, type, maxEntry: -1, tmp: "./"+this.filename+".z"+num
       };
-      this.records.set(rec.id, rec);
+      //clear out the variable file
+      fs.writeFileSync(this.variables.z[name].tmp, "");
       this.zVariableCount++;
     }
+    this.records.set(rec.id, rec);      
   });
   //this.gdr.updateField("zMaxRec", this.zVariableCount-1);
   this.createVariableRecords(this.skel.rVars, "r").forEach(rec => {
     if (rec instanceof RVDR) {
       let
         name = rec.fields.get("Name").value,
-        num = rec.fields.get("Num").value;
+        num = rec.fields.get("Num").value,
+        type = rec.fields.get("DataType").value;
       
       this.variables.r[name] = {
-        rec, maxEntry: -1, tmp: fs.openSync("./"+this.filename+".v"+num, "w+")
+        vdr: rec, type, maxEntry: -1, tmp: "./"+this.filename+".v"+num
       };
-      this.records.set(rec.id, rec);
+      //clear out the variable file
+      fs.writeFileSync(this.variables.z[name].tmp, "");
       this.rVariableCount++;
     }
+    this.records.set(rec.id, rec);
   });
   this.gdr.updateField("rMaxRec", this.rVariableCount-1);
 
@@ -253,17 +262,17 @@ CDF.prototype.getTotalSize = function() {
 CDF.prototype.addData = function(variable, entries) {
   //create a buffer for the output bytes
   let
-    type = CDF.DATA_TYPES[variable.rec.fields.get("DataType").value],
+    type = CDF.DATA_TYPES[variable.vdr.fields.get("DataType").value],
     size = type.size,
     buff = Buffer.alloc(size * entries.length),
     view = new DataView(buff.buffer, buff.offset, buff.length);
 
   entries.forEach((val, val_i) => {
-    type.viewSet.call(view, val_i * size, val);
+    type.viewSet.call(view, val_i * size, val, this.encoding.littleEndian);
     variable.maxEntry++;
   });
 
-  variable.rec.updateField("MaxRec", variable.maxEntry);
+  variable.vdr.updateField("MaxRec", variable.maxEntry);
   fs.appendFileSync(variable.tmp, buff);
 }
 
@@ -271,23 +280,54 @@ CDF.prototype.write = function() {
   let
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
-    output = [magic];
+    offset = 0,
+    file = this.filename + ".cdf";
   
   view.setInt32(0, this.magic[0]);
   view.setInt32(4, this.magic[1]);
+  fs.writeFileSync(file, magic);
+  offset += magic.byteLength;
 
-  this.records.forEach(rec => {
-    output.push(rec.toBytes());
-  })
-  //console.log(output)
-  fs.writeFileSync(this.filename + ".cdf", Buffer.concat(output));
-
-  Object.keys(this.variables.r).forEach(varName => {
+  //create vxr and vvrs
+  /* Object.keys(this.variables.r).forEach(varName => {
     fs.closeSync(this.variables.r[varName].tmp)
   });
+   */
   Object.keys(this.variables.z).forEach(varName => {
-    fs.closeSync(this.variables.z[varName].tmp)
+    let variable = this.variables.z[varName];
+
+    if (variable.maxEntry < 0) {return;}
+
+    let
+      vdr = variable.vdr,
+      vxr = new VXR(this),
+      vvr = new VVR(this, variable);
+    
+    this.records.set(vxr.id, vxr);
+    this.records.set(vvr.id, vvr);  
+    
+    vdr.updateField("VXRhead", vxr);
+    vdr.updateField("VXRtail", vxr);
+    
+    vxr.addEntry(vvr, 0, variable.maxEntry);
   });
+
+  this.records.forEach(rec => {
+    let bytes = rec.toBytes();
+    fs.appendFileSync(file, bytes);
+    offset += bytes.byteLength;
+
+    if (rec instanceof VVR) {
+      fs.createReadStream(rec.data.tmp,).pipe(
+        fs.createWriteStream(file, {start: offset, flags: "r+"})
+      );
+    }
+  });
+  /* Object.keys(this.variables.z).forEach(varName => {  
+    fs.closeSync(this.variables.z[varName].tmp);
+  });
+   *///console.log(output)
+  
 }
 
 CDF.SCOPE = {
@@ -390,8 +430,8 @@ CDF.DATA_TYPES = {
     id: 33, name: "CDF_TIME_TT2000", size: 8,
     typedArray: BigInt64Array,
     viewGet: DataView.prototype.getBigInt64,
-    viewSet: function(offset, val){
-      DataView.prototype.setBigInt64.call(this, offset, BigInt(val))
+    viewSet: function(offset, val, le){
+      DataView.prototype.setBigInt64.call(this, offset, BigInt(val), le)
     },
     pad: -9223372036854775807,
     fill: -9223372036854775808
@@ -433,24 +473,24 @@ CDF.DATA_TYPES.CDF_UCHAR = CDF.DATA_TYPES[52];
 
 CDF.ENCODINGS = {
   1: {id: 1, name: "NETWORK_ENCODING"},
-  2: {id: 1, name: "SUN_ENCODING"},
-  3: {id: 1, name: "VAX_ENCODING", littleEndian: true},
-  4: {id: 1, name: "DECSTATION_ENCODING", littleEndian: true},
-  5: {id: 1, name: "SGi_ENCODING"},
-  6: {id: 1, name: "IBMPC_ENCODING", littleEndian: true},
-  7: {id: 1, name: "IBMRS_ENCODING"},
-  9: {id: 1, name: "PPC_ENCODING"},
-  11: {id: 1, name: "HP_ENCODING", littleEndian: true},
-  12: {id: 1, name: "NeXT_ENCODING"},
-  13: {id: 1, name: "ALPHAOSF1_ENCODING", littleEndian: true},
-  14: {id: 1, name: "ALPHAVMSd_ENCODING", littleEndian: true},
-  15: {id: 1, name: "ALPHAVMSg_ENCODING", littleEndian: true},
-  16: {id: 1, name: "ALPHAVMSi_ENCODING", littleEndian: true},
-  17: {id: 1, name: "ARM_LITTLE_ENCODING", littleEndian: true},
-  18: {id: 1, name: "ARM_BIG_ENCODING"},
-  19: {id: 1, name: "iA64VMSi_ENCODING", littleEndian: true},
-  20: {id: 1, name: "iA64VMSs_ENCODING", littleEndian: true},
-  21: {id: 1, name: "iA64VMSg_ENCODING", littleEndian: true}
+  2: {id: 2, name: "SUN_ENCODING"},
+  3: {id: 3, name: "VAX_ENCODING", littleEndian: true},
+  4: {id: 4, name: "DECSTATION_ENCODING", littleEndian: true},
+  5: {id: 5, name: "SGi_ENCODING"},
+  6: {id: 6, name: "IBMPC_ENCODING", littleEndian: true},
+  7: {id: 7, name: "IBMRS_ENCODING"},
+  9: {id: 9, name: "PPC_ENCODING"},
+  11: {id: 11, name: "HP_ENCODING", littleEndian: true},
+  12: {id: 12, name: "NeXT_ENCODING"},
+  13: {id: 13, name: "ALPHAOSF1_ENCODING", littleEndian: true},
+  14: {id: 14, name: "ALPHAVMSd_ENCODING", littleEndian: true},
+  15: {id: 15, name: "ALPHAVMSg_ENCODING", littleEndian: true},
+  16: {id: 16, name: "ALPHAVMSi_ENCODING", littleEndian: true},
+  17: {id: 17, name: "ARM_LITTLE_ENCODING", littleEndian: true},
+  18: {id: 18, name: "ARM_BIG_ENCODING"},
+  19: {id: 19, name: "iA64VMSi_ENCODING", littleEndian: true},
+  20: {id: 20, name: "iA64VMSs_ENCODING", littleEndian: true},
+  21: {id: 21, name: "iA64VMSg_ENCODING", littleEndian: true}
 }
 CDF.ENCODINGS.NETWORK_ENCODING = CDF.ENCODINGS[1];
 CDF.ENCODINGS.SUN_ENCODING = CDF.ENCODINGS[2];
@@ -539,6 +579,7 @@ Record.prototype.unsetFlag = function(flg) {
   return true;
 }
 Record.prototype.toBytes = function() {
+  //console.log(Object.getPrototypeOf(this))
   let
     buf = Buffer.alloc(this.getSize()),
     view = new DataView(buf.buffer),
@@ -546,12 +587,14 @@ Record.prototype.toBytes = function() {
 
   for (let [name, field] of this.fields) {
     let value = field.value;
-      
+    
+
+
     //a field might be a reference to another record
     //or a function that needs to be evaluated
     if (value instanceof Record) {
      /*  if(name === "AEDRnext"){console.log(name, this.cdf.getOffsetOf(value.id), value.fields.get)} */
-      value = this.cdf.getOffsetOf(value.id)
+      value = this.cdf.getOffsetOf(value.id);
     } else if (typeof value === "function") {
       value = value();
     } else if (value === null) {
@@ -606,8 +649,8 @@ function CDR(cdf) {
   this.addField("GDRoffset", CDF.DATA_TYPES.CDF_INT8, 320);
   this.addField("Version", CDF.DATA_TYPES.CDF_INT4, 3);
   this.addField("Release", CDF.DATA_TYPES.CDF_INT4, 7);
-  this.addField("Encoding", CDF.DATA_TYPES.CDF_INT4, 6);
-  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b10000000000000000000000000000000);
+  this.addField("Encoding", CDF.DATA_TYPES.CDF_INT4, cdf.encoding.id);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b00000000000000000000000000000011);
   this.addField("rfuA", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("Increment", CDF.DATA_TYPES.CDF_INT4, 0);
@@ -625,11 +668,11 @@ CDR.prototype = Object.create(Record.prototype);
 CDR.prototype.constructor = CDR;
 CDR.prototype.getSize = function() {return 312;}
 CDR.FLAGS = {
-  ROW_MAJORITY: 0b10000000000000000000000000000000,
-  SINGLE_FILE:  0b01000000000000000000000000000000,
-  HAS_CHECKSUM: 0b00100000000000000000000000000000,
-  USE_MD5_SUM:  0b00010000000000000000000000000000,
-  ANOTHER_SUM:  0b00001000000000000000000000000000
+  ROW_MAJORITY: 0b00000000000000000000000000000001,
+  SINGLE_FILE:  0b00000000000000000000000000000010,
+  HAS_CHECKSUM: 0b00000000000000000000000000000100,
+  USE_MD5_SUM:  0b00000000000000000000000000001000,
+  ANOTHER_SUM:  0b00000000000000000000000000010000
 }
 
 function GDR(cdf) {
@@ -683,7 +726,9 @@ function VDR(num, v) {
   this.addField("Name", CDF.DATA_TYPES.CDF_CHAR, name, 256);
   if (this.type == "ZVDR") {
     this.addField("zNumDims", CDF.DATA_TYPES.CDF_INT4, dimSizes.length);
-    this.addField("zDimSizes", CDF.DATA_TYPES.CDF_INT4, dimSizes);
+    if (dimSizes.length) {
+      this.addField("zDimSizes", CDF.DATA_TYPES.CDF_INT4, dimSizes);
+    }
   }
   this.addField("DimVarys", CDF.DATA_TYPES.CDF_INT4, dimVarys);
   
@@ -714,9 +759,9 @@ VDR.prototype.toBytes = function() {
   return Buffer.concat([recBuf, padBuf], recBuf.length + padBuf.length);
 }
 VDR.FLAGS = {
-  VARIANCE:    0b10000000000000000000000000000000,
-  PAD:         0b01000000000000000000000000000000,
-  COMPRESSION: 0b00100000000000000000000000000000
+  VARIANCE:    0b00000000000000000000000000000001,
+  PAD:         0b00000000000000000000000000000010,
+  COMPRESSION: 0b00000000000000000000000000000100
 }
 
 function RVDR(cdf, num, variable) {
@@ -823,15 +868,17 @@ AZ_EDR.prototype.constructor = AZ_EDR;
 function VXR(cdf) {
   Record.call(this, arguments);
   
+  this.numEntries = 0
+  
+  let
+    first = (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF),
+    last = (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF);
+
   this.addField("VXRnext", CDF.DATA_TYPES.CDF_INT8, 0);
   this.addField("Nentries", CDF.DATA_TYPES.CDF_INT4, VXR.N_ENTRIES);
   this.addField("NusedEntries", CDF.DATA_TYPES.CDF_INT4, 0);
-  this.addField("First", CDF.DATA_TYPES.CDF_INT4,
-    (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF), VXR.N_ENTRIES
-  );
-  this.addField("Last", CDF.DATA_TYPES.CDF_INT4,
-    (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFF), VXR.N_ENTRIES
-  );
+  this.addField("First", CDF.DATA_TYPES.CDF_INT4, first, VXR.N_ENTRIES);
+  this.addField("Last", CDF.DATA_TYPES.CDF_INT4, last, VXR.N_ENTRIES);
   this.addField("Offset", CDF.DATA_TYPES.CDF_INT8,
     (new Array(VXR.N_ENTRIES)).fill(0xFFFFFFFFFFFFFFFF), VXR.N_ENTRIES
   );
@@ -840,43 +887,49 @@ function VXR(cdf) {
 }
 VXR.prototype = Object.create(Record.prototype);
 VXR.prototype.constructor = VXR;
-VXR.prototype.getSize = function(){return 28 + (this.numEntries*16)};
-VXR.prototype.addEntry = function(rec) {
-  let entry_i = this.fields.get("NusedEntries");
-    
+VXR.prototype.getSize = function() {
+  return 28 + (VXR.N_ENTRIES*16)
+};
+VXR.prototype.addEntry = function(rec, minRec, maxRec) {
+  let entry_i = this.numEntries;
+  this.numEntries = ++entry_i;
+
   if (entry_i === VXR.N_ENTRIES) {
     return false;
   }
 
   if (rec instanceof VVR) {
     let
-      first = this.fields.get("First"),
-      last = this.fields.get("Last"),
-      offset = this.fields.get("Offset");
+      first = this.fields.get("First").value,
+      last = this.fields.get("Last").value,
+      offset = this.fields.get("Offset").value;
 
-    first[entry_i] = rec.first;
-    last[entry_i] = rec.last;
-    offset[entry_i] = rec.id;
+    first[entry_i] = minRec;
+    last[entry_i] = maxRec;
+    offset[entry_i] = this.cdf.getOffsetOf(rec.id);
 
     this.updateField("First", first);
     this.updateField("Last", last);
     this.updateField("Offset", offset);
-    this.updateField("NusedEntries", entry_i++);
+    this.updateField("NusedEntries", this.numEntries);
   }
 
   return entry_i;
 }
 VXR.N_ENTRIES = 7;
 
-function VVR(cdf, type, data) {
+function VVR(cdf, data) {
   Record.call(this, arguments);
 
-  this.addField("Records", type, data);
-  
+  this.data = data;
+
   return this;
 }
 VVR.prototype = Object.create(Record.prototype);
 VVR.prototype.constructor = VVR;
+VVR.prototype.getSize = function() {
+  return 8 + (CDF.DATA_TYPES[this.data.type].size * this.data.maxEntry);
+}
 
 function CCR(cdf) {
   Record.call(this, arguments);

@@ -1,7 +1,7 @@
 {
   "meta": {
     "attributes": {
-      "File_nameing_convention": "source_datatype_descriptor",
+      "File_naming_convention": "source_datatype_descriptor",
       "Data_type": "l2>Level-2",
       "PI_name": "Robyn Millan",
       "PI_affiliation": "Dartmouth College",
@@ -38,7 +38,7 @@
         "VALIDMIN": 306590472162849280,
         "VALIDMAX": 502200068184000000,
         "FILLVAL": -9223372036854775808,
-        "LABLAXIS": "Epoch",
+        "LABLAXIS": "EPOCH",
         "MONOTON": "INCREASE",
         "TIME_BASE": "J2000",
         "TIME_SCALE": "Terrestrial Time",
@@ -66,14 +66,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "I10",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": null
       },
       "dataType": "CDF_UINT4",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -90,14 +89,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "I10",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "32bit flag used to idicate date quality."
       },
       "dataType": "CDF_UINT4",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -114,14 +112,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F6.3",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -138,14 +135,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F6.3",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Converted from raw int value by multiplying by a scaling factor: 8.38190317154 * 10^-8"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -162,14 +158,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F8.3",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": null
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -186,14 +181,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F4.2",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -210,14 +204,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F4.2",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -234,14 +227,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F8.3",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     },
     {
       "attributes": {
@@ -258,14 +250,13 @@
         "TIME_BASE": null,
         "TIME_SCALE": null,
         "REFERENCE_POSITION": null,
-        "DEPEND_0": "Epoch",
+        "DEPEND_0": "EPOCH",
         "FORMAT": "F8.3",
         "DISPLAY_TYPE": "time_series",
         "VAR_NOTES": "Calculated by using T89c model with the IRBEM FORTRAN library"
       },
       "dataType": "CDF_FLOAT",
-      "dimSizes": [1],
-      "dimVarys": [0]
+      "dimSizes": []
     }
   ],
   "rVars": [
