@@ -281,13 +281,13 @@ CDF.prototype.write = function() {
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
     offset = 0,
-    file = this.filename + ".cdf",
-    fd = fs.openSync(file, "r+");
+    file = this.filename + ".cdf";
   
   view.setInt32(0, this.magic[0]);
   view.setInt32(4, this.magic[1]);
   fs.writeFileSync(file, magic);
   offset += magic.byteLength;
+  let fd = fs.openSync(file, "r+");
 
   //create vxr and vvrs
   /* Object.keys(this.variables.r).forEach(varName => {
@@ -346,19 +346,22 @@ CDF.DATA_TYPES = {
     id: 1, name: "CDF_INT1", size: 1,
     typedArray: Int8Array,
     viewGet: DataView.prototype.getInt8,
-    viewSet: DataView.prototype.setInt8
+    viewSet: DataView.prototype.setInt8,
+    fill: -128
   },
   2: {
     id: 2, name: "CDF_INT2", size: 2,
     typedArray: Int16Array,
     viewGet: DataView.prototype.getInt16,
-    viewSet: DataView.prototype.setInt16
+    viewSet: DataView.prototype.setInt16,
+    fill: -32768
   },
   4: {
     id: 4, name: "CDF_INT4", size: 4,
     typedArray: Int32Array,
     viewGet: DataView.prototype.getInt32,
-    viewSet: DataView.prototype.setInt32
+    viewSet: DataView.prototype.setInt32,
+    fill: -2147483648
   },
   8: {
     id: 8, name: "CDF_INT8", size: 8,
@@ -366,71 +369,78 @@ CDF.DATA_TYPES = {
     viewGet: DataView.prototype.getBigInt64,
     viewSet: function(offset, val){
       DataView.prototype.setBigInt64.call(this, offset, BigInt(val))
-    }
+    },
+    fill: -9223372036854776000,
   },
   11: {
     id: 11, name: "CDF_UINT1", size: 1,
     typedArray: Uint8Array,
     viewGet: DataView.prototype.getUint8,
-    viewSet: DataView.prototype.setUint8
+    viewSet: DataView.prototype.setUint8,
+    fill: 255
   },
   12: {
     id: 12, name: "CDF_UINT2", size: 2,
     typedArray: Uint16Array,
     viewGet: DataView.prototype.getUint16,
-    viewSet: DataView.prototype.setUint16
+    viewSet: DataView.prototype.setUint16,
+    fill: 65535
   },
   14: {
     id: 14, name: "CDF_UINT4", size: 4,
     typedArray: Uint32Array,
     viewGet: DataView.prototype.getUint32,
-    viewSet: DataView.prototype.setUint32
+    viewSet: DataView.prototype.setUint32,
+    fill: 4294967295,
   },
   41: {
     id: 41, name: "CDF_BYTE", size: 1,
     typedArray: Int8Array,
     viewGet: DataView.prototype.getInt8,
-    viewSet: DataView.prototype.setInt8
+    viewSet: DataView.prototype.setInt8,
+    fill: -128,
   },
   21: {
     id: 21, name: "CDF_REAL4", size: 4,
     typedArray: Float32Array,
     viewGet: DataView.prototype.getFloat32,
-    viewSet: DataView.prototype.setFloat32
+    viewSet: DataView.prototype.setFloat32,
+    fill: -1.0E31
   },
   22: {
     id: 22, name: "CDF_REAL8", size: 8,
     typedArray: Float64Array,
     viewGet: DataView.prototype.getFloat64,
-    viewSet: DataView.prototype.setFloat64
+    viewSet: DataView.prototype.setFloat64,
+    fill: -1.0E31
   },
   44: {
     id: 44, name: "CDF_FLOAT", size: 4,
     typedArray: Float32Array,
     viewGet: DataView.prototype.getFloat32,
-    viewSet: DataView.prototype.setFloat32
+    viewSet: DataView.prototype.setFloat32,
+    fill: -1.0E31
   },
   45: {
     id: 45, name: "CDF_DOUBLE", size: 8,
     typedArray: Float64Array,
     viewGet: DataView.prototype.getFloat64,
-    viewSet: DataView.prototype.setFloat64
+    viewSet: DataView.prototype.setFloat64,
+    fill: -1.0E31
   },
   31: {
     id: 31, name: "CDF_EPOCH", size: 8,
     typedArray: Float64Array,
     viewGet: DataView.prototype.getFloat64,
     viewSet: DataView.prototype.setFloat64,
-    pad: 0,
-    fill: -1.0E31
+    pad: 0, fill: -1.0E31
   },
   32: {
     id: 32, name: "CDF_EPOCH16", size: 16,
     typedArray: Float64Array,
     viewGet: DataView.prototype.getFloat64,
     viewSet: DataView.prototype.setFloat64,
-    pad: 0,
-    fill: -1.0E31
+    pad: 0, fill: -1.0E31
   },
   33: {
     id: 33, name: "CDF_TIME_TT2000", size: 8,
@@ -439,24 +449,29 @@ CDF.DATA_TYPES = {
     viewSet: function(offset, val, le){
       DataView.prototype.setBigInt64.call(this, offset, BigInt(val), le)
     },
-    pad: -9223372036854775807,
-    fill: -9223372036854775808
+    pad: -9223372036854775807, fill: -9223372036854775808
   },
   51: {
     id: 51, name: "CDF_CHAR", size: 1,
     typedArray: StringArray,
     viewGet: DataView.prototype.getUint8,
-    viewSet: function(offset, val){
-      DataView.prototype.setUint8.call(this, offset, val.charCodeAt(0))
-    }
+    viewSet: function(offset, val) {
+      if (typeof val === "string") {
+        DataView.prototype.setUint8.call(this, offset, val.charCodeAt(0))
+      } else {
+        DataView.prototype.setUint8.call(this, offset, val)
+      }
+    },
+    fill: -128
   },
   52: {
     id: 52, name: "CDF_UCHAR", size: 1,
     typedArray: StringArray,
     viewGet: DataView.prototype.getUint8,
-    viewSet: function(offset, val){
+    viewSet: function(offset, val) {
       DataView.prototype.setUint8.call(this, offset, val.charCodeAt(0))
-    }
+    },
+    fill: 255,
   }
 };
 CDF.DATA_TYPES.CDF_INT1 = CDF.DATA_TYPES[1];
@@ -719,7 +734,7 @@ function VDR(num, v) {
   this.addField("MaxRec", CDF.DATA_TYPES.CDF_INT4, -1);
   this.addField("VXRhead", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("VXRtail", CDF.DATA_TYPES.CDF_INT8, null);
-  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b00000000000000000000000000000001);
   this.addField("SRecrods", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, -1);
