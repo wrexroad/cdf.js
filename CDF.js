@@ -725,7 +725,7 @@ function VDR(num, v) {
   let
     name = v.name || v.attributes.FIELDNAM,
     type = CDF.DATA_TYPES[v.dataType],
-    numElems = v.numElems || 1,
+    numElems = v.length || 1,
     dimSizes = v.dimSizes || [],
     dimVarys = v.dimVarys || [];
 
