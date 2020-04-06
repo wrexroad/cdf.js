@@ -11,7 +11,10 @@ Greenbelt, Maryland 20771 USA
 (Internet -- GSFC-CDF-SUPPORT@LISTS.NASA.GOV)
 `;
 
-const fs = require('fs');
+const
+  fs = require('fs'),
+  {createGzip} = require('zlib'),
+  { pipeline } = require('stream');
 
 function CDF(skel, name) {
   this.skel = Object.create(skel);
@@ -79,13 +82,13 @@ function CDF(skel, name) {
         type = rec.fields.get("DataType").value;
 
       this.variables.z[name] = {
-        vdr: rec, type, maxEntry: -1, tmp: "./"+this.filename+".z"+num
+        vdr: rec, type, maxEntry: -1, entryCount:0, tmp: "./"+this.filename+".z"+num
       };
       //clear out the variable file
       fs.writeFileSync(this.variables.z[name].tmp, "");
       this.zVariableCount++;
     }
-    this.records.set(rec.id, rec);      
+    this.records.set(rec.id, rec);
   });
   //this.gdr.updateField("zMaxRec", this.zVariableCount-1);
   this.createVariableRecords(this.skel.rVars, "r").forEach(rec => {
@@ -96,7 +99,7 @@ function CDF(skel, name) {
         type = rec.fields.get("DataType").value;
       
       this.variables.r[name] = {
-        vdr: rec, type, maxEntry: -1, tmp: "./"+this.filename+".v"+num
+        vdr: rec, type, maxEntry: -1, entryCount:0, tmp: "./"+this.filename+".v"+num
       };
       //clear out the variable file
       fs.writeFileSync(this.variables.z[name].tmp, "");
@@ -163,7 +166,7 @@ CDF.prototype.createVariableRecords = function(variables, rz) {
 
     //create aedr
     variables.forEach((variable, var_i) => {
-      if (variable.attributes[attr_name]) {
+      if (variable.attributes[attr_name] || variable.attributes[attr_name] === 0) {
         let
           val = variable.attributes[attr_name],
           type = typeof val === "string"? "CDF_CHAR" : variable.dataType,
@@ -205,8 +208,10 @@ CDF.prototype.createVariableRecords = function(variables, rz) {
   return recs;
 }
 
-CDF.prototype.setCompression = function(isCompressed, method) {
-  if (isCompressed) {
+CDF.prototype.setCompression = function(lvl) {
+  this.compressionLevel = lvl;
+
+  if (lvl) {
     this.magic[1] = 0xCCCC0001;
   } else {
     this.magic[1] = 0x0000FFFF;
@@ -259,7 +264,7 @@ CDF.prototype.getTotalSize = function() {
   return size;  
 }
 
-CDF.prototype.addData = function(variable, entries) {
+CDF.prototype.addData = function(variable, entries, rec = 1) {
   //create a buffer for the output bytes
   let
     type = CDF.DATA_TYPES[variable.vdr.fields.get("DataType").value],
@@ -269,20 +274,25 @@ CDF.prototype.addData = function(variable, entries) {
 
   entries.forEach((val, val_i) => {
     type.viewSet.call(view, val_i * size, val, this.encoding.littleEndian);
-    variable.maxEntry++;
+    variable.entryCount++;
   });
 
+  variable.maxEntry += rec;
   variable.vdr.updateField("MaxRec", variable.maxEntry);
   fs.appendFileSync(variable.tmp, buff);
 }
 
-CDF.prototype.write = function() {
+CDF.prototype.write = function(prefix = "") {
   let
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
     offset = 0,
-    file = this.filename + ".cdf";
+    file = prefix + this.filename + ".cdf";
   
+  if (prefix.length && !fs.existsSync(prefix)) {
+    fs.mkdirSync(prefix, {"recursive": true});
+  }
+
   view.setInt32(0, this.magic[0]);
   view.setInt32(4, this.magic[1]);
   fs.writeFileSync(file, magic);
@@ -313,7 +323,8 @@ CDF.prototype.write = function() {
     vxr.addEntry(vvr, 0, variable.maxEntry);
   });
 
-  this.records.forEach(rec => {
+  let promises = [];
+  this.records.forEach(rec => {promises.push(new Promise((resolve, reject) => {
     let
       bytes = rec.toBytes(),
       size = bytes.byteLength;
@@ -324,16 +335,85 @@ CDF.prototype.write = function() {
     if (rec instanceof VVR) {
       fs.createReadStream(rec.data.tmp).pipe(
         fs.createWriteStream(file, {start: offset, flags: "r+"})
-      );
-      console.log(size, rec.getSize() - size)
+      ).on("finish", () => {
+        fs.unlink(rec.data.tmp, resolve)
+      });
       offset += (rec.getSize() - size);
+    } else {
+      resolve();
     }
+  }))});
+  
+  Promise.all(promises).then(() => {
+    fs.closeSync(fd);
+    if (this.compressionLevel) {
+      this.compress(file);
+    }
+    Object.keys(this.variables.z).forEach(name => {
+      // fs.unlinkSync(this.variables.z[name].tmp)
+     });  
   });
-  /* Object.keys(this.variables.z).forEach(varName => {  
-    fs.closeSync(this.variables.z[varName].tmp);
-  });
-   *///console.log(output)
-  fs.closeSync(fd);
+}
+
+CDF.prototype.compress = function(file) {
+  let
+    compFile = file + ".cmp",
+    uSize = fs.statSync(file).size;
+  
+  console.log("Compressing " + file + "...");
+  
+  pipeline(
+    fs.createReadStream(file, {start: 8}),
+    createGzip({level:this.compressionLevel}),
+    fs.createWriteStream(compFile),
+    err => {
+      if (err) {
+        console.error(`Failed to compress ${file}: ${err}`)
+      }
+      let
+        cSize = fs.statSync(compFile).size,
+        ccr = Buffer.alloc(32),
+        ccrView = new DataView(ccr.buffer, ccr.byteOffset, ccr.buffer.byteLength),
+        cprOffset = 8 + 32 + cSize; //magic plus record size;
+      
+      ccrView.setBigInt64(0, BigInt(32 + cSize));//Record Size
+      ccrView.setInt32(8, Record.TYPES.CCR);//Record Type
+      ccrView.setBigInt64(12, BigInt(cprOffset)),
+      ccrView.setBigInt64(20, BigInt(uSize - 8));//uncompressed size minus magic
+      ccrView.setInt32(28, 0);//rfuA
+      
+      //begin overwriting the uncompressed cdf file
+      fs.writeFileSync(file,
+        Buffer.from([0xCD, 0xF3, 0x00, 0x01, 0xCC, 0xCC, 0x00, 0x01])
+      );
+      fs.appendFileSync(file, ccr);
+      fs.createReadStream(compFile).pipe(
+        fs.createWriteStream(file, {start: 40, flags: "r+"})
+      ).on("finish", () => {fs.unlinkSync(compFile)});
+
+      let
+        cpr = Buffer.alloc(28),
+        cprView = new DataView(cpr.buffer, cpr.byteOffset, cpr.buffer.byteLength);
+
+      cprView.setBigInt64(0, BigInt(28));//Record Size
+      cprView.setInt32(8, Record.TYPES.CPR);//Record Type
+      cprView.setInt32(12, 5);//Compression type
+      cprView.setInt32(16, 0);//rfuA
+      cprView.setInt32(20, 1);//parameter count
+      cprView.setInt32(24, this.compressionLevel);//parameters
+      fs.open(file, "r+", (err, fd) => {
+        if (err) {
+          console.error("Could not write compressed file.");
+          return;
+        }
+        fs.write(fd, cpr, 0, 28, cprOffset, console.error);
+      });
+
+      console.log(
+        `${compFile}: ${uSize} to ${cSize} bytes (${(100*cSize/uSize)>>0}%)`
+      )
+    }
+  );
 }
 
 CDF.SCOPE = {
@@ -608,8 +688,6 @@ Record.prototype.toBytes = function() {
   for (let [name, field] of this.fields) {
     let value = field.value;
     
-
-
     //a field might be a reference to another record
     //or a function that needs to be evaluated
     if (value instanceof Record) {
@@ -630,7 +708,9 @@ Record.prototype.toBytes = function() {
       }
 
       for (let val_i=0; val_i < value.length && val_i < numEls; val_i++) {
-        field.viewSet.call(view, offset, value[val_i]);
+        field.viewSet.call(view, offset, value[val_i],
+          name==="Value"? this.cdf.encoding.littleEndian : false
+        );
         offset += field.size;
       }
       //if fixed width, pad the offset if needed
@@ -639,7 +719,9 @@ Record.prototype.toBytes = function() {
       }
 
     } else if (numEls === undefined) {//make sure to ignore values with length===0
-      field.viewSet.call(view, offset, value || 0);
+      field.viewSet.call(view, offset, value || 0,
+        name==="Value"? this.cdf.encoding.littleEndian : false
+      );
       offset += field.size;
     }
   }
@@ -727,14 +809,16 @@ function VDR(num, v) {
     type = CDF.DATA_TYPES[v.dataType],
     numElems = v.length || 1,
     dimSizes = v.dimSizes || [],
-    dimVarys = v.dimVarys || [];
+    dimVarys = v.dimVarys || [],
+    recVarys = (v.recVarys || (v.recVarys === undefined))?  
+      0b00000000000000000000000000000001 : 0;
 
   this.addField("VDRnext", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("DataType", CDF.DATA_TYPES.CDF_INT4, type.id);
   this.addField("MaxRec", CDF.DATA_TYPES.CDF_INT4, -1);
   this.addField("VXRhead", CDF.DATA_TYPES.CDF_INT8, null);
   this.addField("VXRtail", CDF.DATA_TYPES.CDF_INT8, null);
-  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, 0b00000000000000000000000000000001);
+  this.addField("Flags", CDF.DATA_TYPES.CDF_INT4, recVarys);
   this.addField("SRecrods", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuB", CDF.DATA_TYPES.CDF_INT4, 0);
   this.addField("rfuC", CDF.DATA_TYPES.CDF_INT4, -1);
@@ -750,7 +834,7 @@ function VDR(num, v) {
       this.addField("zDimSizes", CDF.DATA_TYPES.CDF_INT4, dimSizes);
     }
   }
-  this.addField("DimVarys", CDF.DATA_TYPES.CDF_INT4, dimVarys);
+  this.addField("DimVarys", CDF.DATA_TYPES.CDF_INT4, dimVarys, dimSizes.length);
   
   return this;
 }
@@ -951,7 +1035,7 @@ function VVR(cdf, data) {
 VVR.prototype = Object.create(Record.prototype);
 VVR.prototype.constructor = VVR;
 VVR.prototype.getSize = function() {
-  return 12 + (CDF.DATA_TYPES[this.data.type].size * (this.data.maxEntry + 1));
+  return 12 + (CDF.DATA_TYPES[this.data.type].size * (this.data.entryCount));
 }
 VVR.prototype.toBytes = function() {
   let
@@ -969,7 +1053,12 @@ VVR.prototype.toBytes = function() {
 }
 function CCR(cdf) {
   Record.call(this, arguments);
-  return this
+
+  this.addField("CPRoffset", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("uSize", CDF.DATA_TYPES.CDF_INT8, null);
+  this.addField("rfuA", CDF.DATA_TYPES.CDF_INT8, 0);
+  
+  return this;
 }
 CCR.prototype = Object.create(Record.prototype);
 CCR.prototype.constructor = CCR;
