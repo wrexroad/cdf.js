@@ -447,8 +447,8 @@ CDF.DATA_TYPES = {
     id: 8, name: "CDF_INT8", size: 8,
     typedArray: BigInt64Array,
     viewGet: DataView.prototype.getBigInt64,
-    viewSet: function(offset, val){
-      DataView.prototype.setBigInt64.call(this, offset, BigInt(val))
+    viewSet: function(offset, val, le){
+      DataView.prototype.setBigInt64.call(this, offset, BigInt(val), le)
     },
     fill: -9223372036854776000,
   },
