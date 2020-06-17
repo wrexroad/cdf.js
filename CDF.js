@@ -286,7 +286,6 @@ CDF.prototype.write = function(prefix = "") {
   let
     magic = Buffer.alloc(8),
     view = new DataView(magic.buffer, magic.offset, magic.byteLength),
-    offset = 0,
     file = prefix + this.filename + ".cdf";
   
   if (prefix.length && !fs.existsSync(prefix)) {
@@ -323,15 +322,33 @@ CDF.prototype.write = function(prefix = "") {
     vxr.addEntry(vvr, 0, variable.maxEntry);
   });
 
-  let promises = [];
-  this.records.forEach(rec => {promises.push(new Promise((resolve, reject) => {
-    let
-      bytes = rec.toBytes(),
-      size = bytes.byteLength;
+  return this.writeRecs(fd).then(() => {
+    fs.closeSync(fd);
+    if (this.compressionLevel) {
+      this.compress(file);
+    }
+    Object.keys(this.variables.z).forEach(name => {
+      // fs.unlinkSync(this.variables.z[name].tmp)
+     });  
+  });
+}
+CDF.prototype.writeRecs = function(fd, rec_i, offset) {
+  rec_i = rec_i || 0;
+  offset = offset || 0;
 
-    fs.writeSync(fd, bytes, 0, size, offset);
-    offset += size;
+  if (rec_i === this.records.length) {
+    resolve();
+  }
 
+  let
+    rec = this.records[rec_i],
+    bytes = rec.toBytes(),
+    size = bytes.byteLength;
+
+  fs.writeSync(fd, bytes, 0, size, offset);
+  offset += size;
+
+  return new Promise((resolve, reject) => {
     if (rec instanceof VVR) {
       fs.createReadStream(rec.data.tmp).pipe(
         fs.createWriteStream(file, {start: offset, flags: "r+"})
@@ -342,17 +359,7 @@ CDF.prototype.write = function(prefix = "") {
     } else {
       resolve();
     }
-  }))});
-  
-  Promise.all(promises).then(() => {
-    fs.closeSync(fd);
-    if (this.compressionLevel) {
-      this.compress(file);
-    }
-    Object.keys(this.variables.z).forEach(name => {
-      // fs.unlinkSync(this.variables.z[name].tmp)
-     });  
-  });
+  }).then(()=>this.writeRecs(fd, rec_i++, offset));
 }
 
 CDF.prototype.compress = function(file) {
@@ -527,7 +534,7 @@ CDF.DATA_TYPES = {
     typedArray: BigInt64Array,
     viewGet: DataView.prototype.getBigInt64,
     viewSet: function(offset, val, le){
-      DataView.prototype.setBigInt64.call(this, offset, BigInt(val), le)
+      DataView.prototype.setBigInt64.call(this, offset, BigInt(val>>0), le)
     },
     pad: -9223372036854775807, fill: -9223372036854775808
   },
